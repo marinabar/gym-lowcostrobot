@@ -5,7 +5,7 @@
   <default>
     <default class="follower">
       <joint armature="0.1" damping="1." actuatorfrcrange="-10 10"/>
-      <position kp="1000" kv="10" inheritrange="1"/>
+      <position kp="1000" kv="10"/>
       <default class="visual">
         <geom type="mesh" group="2" contype="1" conaffinity="1"/>
       </default>

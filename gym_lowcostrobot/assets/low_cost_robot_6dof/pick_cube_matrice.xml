@@ -1,0 +1,117 @@
+<mujoco model="low_cost_robot scene">
+	<compiler angle="radian" autolimits="true" convexhull="false"/>
+    <!-- The timestep has a big influence on the contacts stability -->
+    <option cone="elliptic" impratio="10" timestep="0.005" gravity="0 0 -9.81"/>
+  
+    <include file="follower.xml"/>
+  
+    <statistic center="0 0 0.1" extent="0.6"/>
+    <!-- static cubes
+    <default class="static_cube">
+            <geom
+                type="box"
+                size="0.01 0.01 0.01"
+                rgba="0.5 0 0 1"
+                contype="0"
+                conaffinity="0"
+            />
+    </default>
+    -->
+  
+    <visual>
+      <headlight diffuse="0.6 0.6 0.6" ambient="0.3 0.3 0.3" specular="0 0 0"/>
+      <rgba haze="0.15 0.25 0.35 1"/>
+      <global azimuth="150" elevation="-20" offheight="640"/>
+    </visual>
+  
+    <asset>
+      <texture type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0" width="512" height="3072"/>
+      <texture type="2d" name="groundplane" builtin="checker" mark="edge" rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3"
+        markrgb="0.8 0.8 0.8" width="300" height="300"/>
+      <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="5 5" reflectance="0.2"/>
+    </asset>
+  
+    <worldbody>
+      <light pos="0 0 3" dir="0 0 -1" directional="false"/>
+      <geom name="floor" size="0 0 0.05" type="plane" material="groundplane" pos="0 0 0" friction="0.1" rgba="0.8 0.8 0.8 1"/>
+      <body name="cube" pos="0.0 0.2 0.008">
+          <freejoint name="red_box_joint"/>
+          <inertial pos="0 0 0" mass="10" diaginertia="0.00016667 0.00016667 0.00016667"/>
+          <geom friction="0.5" condim="4" pos="0 0 0" size="0.01 0.01 0.01" type="box" name="red_box" rgba="0.5 0 0 1" priority="1"/>
+      </body>
+      <!-- static cubes
+            <geom name="static_cube_0" pos="-0.08 0.08 0.01" class="static_cube"/>
+            
+            <geom name="static_cube_1" pos="-0.04 0.08 0.01" class="static_cube"/>
+            
+            <geom name="static_cube_2" pos="0.0 0.08 0.01" class="static_cube"/>
+            
+            <geom name="static_cube_3" pos="0.04 0.08 0.01" class="static_cube"/>
+            
+            <geom name="static_cube_4" pos="0.08 0.08 0.01" class="static_cube"/>
+            
+            <geom name="static_cube_5" pos="-0.08 0.12 0.01" class="static_cube"/>
+            
+            <geom name="static_cube_6" pos="-0.04 0.12 0.01" class="static_cube"/>
+            
+            <geom name="static_cube_7" pos="0.0 0.12 0.01" class="static_cube"/>
+            
+            <geom name="static_cube_8" pos="0.04 0.12 0.01" class="static_cube"/>
+            
+            <geom name="static_cube_9" pos="0.08 0.12 0.01" class="static_cube"/>
+            
+            <geom name="static_cube_10" pos="-0.08 0.16 0.01" class="static_cube"/>
+            
+            <geom name="static_cube_11" pos="-0.04 0.16 0.01" class="static_cube"/>
+            
+            <geom name="static_cube_12" pos="0.0 0.16 0.01" class="static_cube"/>
+            
+            <geom name="static_cube_13" pos="0.04 0.16 0.01" class="static_cube"/>
+            
+            <geom name="static_cube_14" pos="0.08 0.16 0.01" class="static_cube"/>
+            
+            <geom name="static_cube_15" pos="-0.08 0.2 0.01" class="static_cube"/>
+            
+            <geom name="static_cube_16" pos="-0.04 0.2 0.01" class="static_cube"/>
+            
+            <geom name="static_cube_17" pos="0.0 0.2 0.01" class="static_cube"/>
+            
+            <geom name="static_cube_18" pos="0.04 0.2 0.01" class="static_cube"/>
+            
+            <geom name="static_cube_19" pos="0.08 0.2 0.01" class="static_cube"/>
+            
+            <geom name="static_cube_20" pos="-0.08 0.24 0.01" class="static_cube"/>
+            
+            <geom name="static_cube_21" pos="-0.04 0.24 0.01" class="static_cube"/>
+            
+            <geom name="static_cube_22" pos="0.0 0.24 0.01" class="static_cube"/>
+            
+            <geom name="static_cube_23" pos="0.04 0.24 0.01" class="static_cube"/>
+            
+            <geom name="static_cube_24" pos="0.08 0.24 0.01" class="static_cube"/>
+         -->
+        <!-- Add the new open box -->
+      <body name="target_region" pos="-0.11 -0.05 0.005">
+          <!-- Left Wall -->
+          <geom name="target_wall_left" type="box" pos="-0.03 0 0.025" size="0.003 0.03 0.025"
+                rgba="1 1 1 1" contype="0" conaffinity="0"/>
+          <!-- Right Wall -->
+          <geom name="target_wall_right" type="box" pos="0.03 0 0.025" size="0.003 0.03 0.025"
+                rgba="1 1 1 1" contype="0" conaffinity="0"/>
+          <!-- Front Wall (facing the robot) -->
+          <geom name="target_wall_front" type="box" pos="0 -0.03 0.025" size="0.03 0.003 0.025"
+                rgba="1 1 1 1" contype="0" conaffinity="0"/>
+          <!-- Back Wall -->
+          <geom name="target_wall_back" type="box" pos="0 0.03 0.025" size="0.03 0.003 0.025"
+                rgba="1 1 1 1" contype="0" conaffinity="0"/>
+      </body>
+
+
+    <!-- rotation of the camera (180° angle on the y axis to turn to the robot, 1.9 to be turned downwards ) -->
+		<camera name="camera_front" pos="0.0 0.6 0.2" euler="1.9 3.1416 0"/>
+		<camera name="camera_top" pos="0 0.12 0.6" euler="0 0 0" mode="fixed"/>
+	  <camera name="camera_vizu" pos="-0.18 0.6 0.3" quat="-0.15 -0.1 0.6 1"/>
+	  
+    </worldbody>
+  
+  </mujoco><camera pos="-0.452 0.852 0.263" xyaxes="-0.883 -0.469 -0.000 0.123 -0.232 0.965"/>
