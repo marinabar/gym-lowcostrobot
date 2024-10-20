@@ -118,6 +118,10 @@ class PickCubeMatriceEnv(Env):
         self.target_low = np.array([-0.15, 0.10, 0.005])
         self.target_high = np.array([0.15, 0.25, 0.005])
 
+        #self.robot_rest_pos = np.array([-0.00306796,  0.71811652,  1.41732051,  -0.15493206,   0.09203885, -0.75471855])
+        self.robot_rest_pos = np.array([0.0, 0.0, 0.0, -1.5, 0.0, 0.0])
+        #[ 0.01073787  0.28992237  0.3037282  -1.6689711  -0.13499031 -0.75778651]
+
         # get dof addresses
         self.cube_dof_id = self.model.body("cube").dofadr[0]
         self.arm_dof_id = self.model.body(BASE_LINK_NAME).dofadr[0]
@@ -128,7 +132,7 @@ class PickCubeMatriceEnv(Env):
 
         self.control_decimation = 4 # number of simulation steps per control step
 
-        s = 0.01  # Cube half-size
+        s = 0.008  # Cube half-size
         p = 2*s     # Padding equal to cube size
         D = 2*s + p  # Distance between centers
         y_robot = 0.00
@@ -136,7 +140,7 @@ class PickCubeMatriceEnv(Env):
         distance_robot_to_first_row = 2 * D
         y0 = y_robot + distance_robot_to_first_row
         y_positions = [y0 + D * j for j in range(5)]
-        z = 0.01 # Cube z-position
+        z = 0.008 # Cube z-position
 
         # Create the grid of positions
         cube_positions = []
@@ -252,16 +256,16 @@ class PickCubeMatriceEnv(Env):
     def reset(self, seed=None, options=None):
         # We need the following line to seed self.np_random
         super().reset(seed=seed, options=options)
-        cube_pos = self.cube_positions[0]
+        cube_pos = self.cube_positions[15]
         print(f"Starting position of the cube : {cube_pos}")
 
         # Reset the robot to the initial position and sample the cube position
         #cube_pos = self.np_random.uniform(self.cube_low, self.cube_high)
         cube_rot = np.array([1.0, 0.0, 0.0, 0.0])
-        robot_qpos = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+        robot_qpos = self.robot_rest_pos
         self.data.qpos[self.arm_dof_id:self.arm_dof_id+self.nb_dof] = robot_qpos
         self.data.qpos[self.cube_dof_id:self.cube_dof_id + 7] = np.concatenate([cube_pos, cube_rot])
-
+        self.data.ctrl = self.robot_rest_pos
         # Set the target position
         self.target_pos = self.model.body('target_region').pos
         print(f"Target position of the cube : {self.target_pos}")
@@ -277,6 +281,7 @@ class PickCubeMatriceEnv(Env):
     def step(self, action):
         # Perform the action and step the simulation
         self.apply_action(action)
+        print(f"Action applied : {action}")
 
         # Get the new observation
         observation = self.get_observation()

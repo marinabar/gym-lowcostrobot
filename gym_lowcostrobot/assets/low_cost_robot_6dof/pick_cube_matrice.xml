@@ -36,8 +36,8 @@
       <geom name="floor" size="0 0 0.05" type="plane" material="groundplane" pos="0 0 0" friction="0.1" rgba="0.8 0.8 0.8 1"/>
       <body name="cube" pos="0.0 0.2 0.008">
           <freejoint name="red_box_joint"/>
-          <inertial pos="0 0 0" mass="10" diaginertia="0.00016667 0.00016667 0.00016667"/>
-          <geom friction="0.5" condim="4" pos="0 0 0" size="0.01 0.01 0.01" type="box" name="red_box" rgba="0.5 0 0 1" priority="1"/>
+          <inertial pos="0 0 0" mass="0.8" diaginertia="0.00016667 0.00016667 0.00016667"/>
+          <geom friction="4.0" condim="4" pos="0 0 0" size="0.008 0.008 0.008" type="box" name="red_box" rgba="0.5 0 0 1" priority="1"/>
       </body>
       <!-- static cubes
             <geom name="static_cube_0" pos="-0.08 0.08 0.01" class="static_cube"/>
@@ -91,19 +91,19 @@
             <geom name="static_cube_24" pos="0.08 0.24 0.01" class="static_cube"/>
          -->
         <!-- Add the new open box -->
-      <body name="target_region" pos="-0.11 -0.05 0.005">
+      <body name="target_region" pos="-0.11 -0.01 0.005">
           <!-- Left Wall -->
           <geom name="target_wall_left" type="box" pos="-0.03 0 0.025" size="0.003 0.03 0.025"
-                rgba="1 1 1 1" contype="0" conaffinity="0"/>
+                rgba="1 1 1 1"/>
           <!-- Right Wall -->
           <geom name="target_wall_right" type="box" pos="0.03 0 0.025" size="0.003 0.03 0.025"
-                rgba="1 1 1 1" contype="0" conaffinity="0"/>
+                rgba="1 1 1 1"/>
           <!-- Front Wall (facing the robot) -->
           <geom name="target_wall_front" type="box" pos="0 -0.03 0.025" size="0.03 0.003 0.025"
-                rgba="1 1 1 1" contype="0" conaffinity="0"/>
+                rgba="1 1 1 1"/>
           <!-- Back Wall -->
           <geom name="target_wall_back" type="box" pos="0 0.03 0.025" size="0.03 0.003 0.025"
-                rgba="1 1 1 1" contype="0" conaffinity="0"/>
+                rgba="1 1 1 1"/>
       </body>
 
 
