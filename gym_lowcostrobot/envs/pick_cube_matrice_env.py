@@ -8,6 +8,26 @@ from gymnasium import Env, spaces
 
 from gym_lowcostrobot import ASSETS_PATH, BASE_LINK_NAME
 
+
+def create_cube_positions():
+    s = 0.008  # Cube half-size
+    p = 2 * s  # Padding equal to cube size
+    D = 2 * s + p  # Distance between centers
+    y_robot = 0.00
+    x_positions = [D * (i - 2) for i in range(5)]  # Centered around x=0
+    distance_robot_to_first_row = 3 * D
+    y0 = y_robot + distance_robot_to_first_row
+    y_positions = [y0 + D * j for j in range(5)]
+    z = 0.008  # Cube z-position
+
+    # Create the grid of positions
+    cube_positions = []
+    for y in y_positions:
+        for x in x_positions:
+            cube_positions.append(np.array([x, y, z]))  # Cube's z-position is s
+    return cube_positions
+
+
 class PickCubeMatriceEnv(Env):
     """
     ## Description
@@ -91,7 +111,6 @@ class PickCubeMatriceEnv(Env):
         observation_subspaces = {
             "arm_qpos": spaces.Box(low=-np.pi, high=np.pi, shape=(6,)),
             "arm_qvel": spaces.Box(low=-10.0, high=10.0, shape=(6,)),
-            "target_pos": spaces.Box(low=-10.0, high=10.0, shape=(3,)),
         }
         if self.observation_mode in ["image", "both"]:
             observation_subspaces["image_front"] = spaces.Box(0, 255, shape=(240, 320, 3), dtype=np.uint8)
@@ -113,14 +132,11 @@ class PickCubeMatriceEnv(Env):
 
         # Set additional utils
         self.threshold_height = 0.5
-        self.cube_low = np.array([-0.15, 0.10, 0.015])
-        self.cube_high = np.array([0.15, 0.25, 0.015])
-        self.target_low = np.array([-0.15, 0.10, 0.005])
-        self.target_high = np.array([0.15, 0.25, 0.005])
 
-        #self.robot_rest_pos = np.array([-0.00306796,  0.71811652,  1.41732051,  -0.15493206,   0.09203885, -0.75471855])
-        self.robot_rest_pos = np.array([0.0, 0.0, 0.0, -1.5, 0.0, 0.0])
-        #[ 0.01073787  0.28992237  0.3037282  -1.6689711  -0.13499031 -0.75778651]
+        # self.robot_rest_pos = np.array([-0.00306796,  0.71811652,  1.41732051,  -0.15493206,   0.09203885, -0.75471855])
+        # self.robot_rest_pos = np.array([0.0, 0.0, 0.0, -1.5, 0.0, 0.0])
+        self.robot_rest_pos = np.array([-0.00153398, 0.67648553, 1.47108758, 0.1518641, -0.02607767, -0.75318457])
+        # [-0.00153398,  0.67648553,  1.47108758,  0.1518641,  -0.02607767, -0.75318457]
 
         # get dof addresses
         self.cube_dof_id = self.model.body("cube").dofadr[0]
@@ -130,27 +146,9 @@ class PickCubeMatriceEnv(Env):
         if self.arm_dof_id != 0:
             self.arm_dof_id = self.arm_dof_vel_id + 1
 
-        self.control_decimation = 4 # number of simulation steps per control step
+        self.control_decimation = 4  # number of simulation steps per control step
 
-        s = 0.008  # Cube half-size
-        p = 2*s     # Padding equal to cube size
-        D = 2*s + p  # Distance between centers
-        y_robot = 0.00
-        x_positions = [D * (i - 2) for i in range(5)]  # Centered around x=0
-        distance_robot_to_first_row = 2 * D
-        y0 = y_robot + distance_robot_to_first_row
-        y_positions = [y0 + D * j for j in range(5)]
-        z = 0.008 # Cube z-position
-
-        # Create the grid of positions
-        cube_positions = []
-        for y in y_positions:
-            for x in x_positions:
-                cube_positions.append(np.array([x, y, z]))  # Cube's z-position is s
-
-        self.cube_positions = cube_positions
-
-
+        self.cube_positions = create_cube_positions()
 
     def inverse_kinematics(self, ee_target_pos, step=0.2, joint_name="link_6", nb_dof=6, regularization=1e-6):
         """
@@ -194,7 +192,7 @@ class PickCubeMatriceEnv(Env):
             qdot /= qdot_norm
 
         # Read the current joint positions
-        qpos = self.data.qpos[self.arm_dof_id:self.arm_dof_id+nb_dof]
+        qpos = self.data.qpos[self.arm_dof_id : self.arm_dof_id + nb_dof]
 
         # Compute the new joint positions
         q_target_pos = qpos + qdot * step
@@ -240,9 +238,8 @@ class PickCubeMatriceEnv(Env):
         # qpos is [x, y, z, qw, qx, qy, qz, q1, q2, q3, q4, q5, q6, gripper]
         # qvel is [vx, vy, vz, wx, wy, wz, dq1, dq2, dq3, dq4, dq5, dq6, dgripper]
         observation = {
-            "arm_qpos": self.data.qpos[self.arm_dof_id:self.arm_dof_id+self.nb_dof].astype(np.float32),
-            "arm_qvel": self.data.qvel[self.arm_dof_vel_id:self.arm_dof_vel_id+self.nb_dof].astype(np.float32),
-            "target_pos": self.target_pos,
+            "arm_qpos": self.data.qpos[self.arm_dof_id : self.arm_dof_id + self.nb_dof].astype(np.float32),
+            "arm_qvel": self.data.qvel[self.arm_dof_vel_id : self.arm_dof_vel_id + self.nb_dof].astype(np.float32),
         }
         if self.observation_mode in ["image", "both"]:
             self.renderer.update_scene(self.data, camera="camera_front")
@@ -250,28 +247,29 @@ class PickCubeMatriceEnv(Env):
             self.renderer.update_scene(self.data, camera="camera_top")
             observation["image_top"] = self.renderer.render()
         if self.observation_mode in ["state", "both"]:
-            observation["cube_pos"] = self.data.qpos[self.cube_dof_id:self.cube_dof_id+3].astype(np.float32)
+            observation["cube_pos"] = self.data.qpos[self.cube_dof_id : self.cube_dof_id + 3].astype(np.float32)
         return observation
 
     def reset(self, seed=None, options=None):
         # We need the following line to seed self.np_random
         super().reset(seed=seed, options=options)
-        cube_pos = self.cube_positions[15]
+        cube_pos_index = np.random.randint(0, 24)
+        print(f"Cube position index : {cube_pos_index}")
+        cube_pos = self.cube_positions[cube_pos_index]
         print(f"Starting position of the cube : {cube_pos}")
 
         # Reset the robot to the initial position and sample the cube position
-        #cube_pos = self.np_random.uniform(self.cube_low, self.cube_high)
+        # cube_pos = self.np_random.uniform(self.cube_low, self.cube_high)
         cube_rot = np.array([1.0, 0.0, 0.0, 0.0])
         robot_qpos = self.robot_rest_pos
-        self.data.qpos[self.arm_dof_id:self.arm_dof_id+self.nb_dof] = robot_qpos
-        self.data.qpos[self.cube_dof_id:self.cube_dof_id + 7] = np.concatenate([cube_pos, cube_rot])
-        self.data.ctrl = self.robot_rest_pos
+        self.data.qpos[self.arm_dof_id : self.arm_dof_id + self.nb_dof] = robot_qpos
+        self.data.qpos[self.cube_dof_id : self.cube_dof_id + 7] = np.concatenate([cube_pos, cube_rot])
         # Set the target position
-        self.target_pos = self.model.body('target_region').pos
-        print(f"Target position of the cube : {self.target_pos}")
+        self.target_pos = self.model.body("target_region").pos
+        # self.data.ctrl = robot_qpos
 
         # update visualization
-        #self.model.body('target_region').pos = self.target_pos[:]
+        # self.model.body('target_region').pos = self.target_pos[:]
 
         # Step the simulation
         mujoco.mj_forward(self.model, self.data)
@@ -281,13 +279,13 @@ class PickCubeMatriceEnv(Env):
     def step(self, action):
         # Perform the action and step the simulation
         self.apply_action(action)
-        print(f"Action applied : {action}")
+        # print(f"Action applied : {action}")
 
         # Get the new observation
         observation = self.get_observation()
 
         # Get the position of the cube and the distance between the end effector and the cube
-        cube_pos = self.data.qpos[self.cube_dof_id:self.cube_dof_id+3]
+        cube_pos = self.data.qpos[self.cube_dof_id : self.cube_dof_id + 3]
         cube_to_target = np.linalg.norm(cube_pos - self.target_pos)
 
         # Compute the reward
