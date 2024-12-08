@@ -113,8 +113,9 @@ class PickCubeMatriceEnv(Env):
             "agent_vel": spaces.Box(low=-10.0, high=10.0, shape=(6,)),
         }
         if self.observation_mode in ["image", "both"]:
-            observation_subspaces["image_front"] = spaces.Box(0, 255, shape=(240, 320, 3), dtype=np.uint8)
-            observation_subspaces["image_top"] = spaces.Box(0, 255, shape=(240, 320, 3), dtype=np.uint8)
+            observation_subspaces["pixels"] = spaces.Dict()
+            observation_subspaces["pixels"]["image_front"] = spaces.Box(0, 255, shape=(240, 320, 3), dtype=np.uint8)
+            observation_subspaces["pixels"]["image_top"] = spaces.Box(0, 255, shape=(240, 320, 3), dtype=np.uint8)
             self.renderer = mujoco.Renderer(self.model)
         if self.observation_mode in ["state", "both"]:
             observation_subspaces["cube_pos"] = spaces.Box(low=-10.0, high=10.0, shape=(3,))
@@ -242,10 +243,11 @@ class PickCubeMatriceEnv(Env):
             "agent_vel": self.data.qvel[self.arm_dof_vel_id : self.arm_dof_vel_id + self.nb_dof].astype(np.float32),
         }
         if self.observation_mode in ["image", "both"]:
+            observation["pixels"] = {}
             self.renderer.update_scene(self.data, camera="camera_front")
-            observation["image_front"] = self.renderer.render()
+            observation["pixels"]["image_front"] = self.renderer.render()
             self.renderer.update_scene(self.data, camera="camera_top")
-            observation["image_top"] = self.renderer.render()
+            observation["pixels"]["image_top"] = self.renderer.render()
         if self.observation_mode in ["state", "both"]:
             observation["cube_pos"] = self.data.qpos[self.cube_dof_id : self.cube_dof_id + 3].astype(np.float32)
         return observation
