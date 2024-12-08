@@ -62,8 +62,8 @@ class PickCubeMatriceEnv(Env):
 
     The observation space is a dictionary containing the following subspaces:
 
-    - `"arm_qpos"`: the joint angles of the robot arm in radians, shape (6,)
-    - `"arm_qvel"`: the joint velocities of the robot arm in radians per second, shape (6,)
+    - `"agent_pos"`: the joint angles of the robot arm in radians, shape (6,)
+    - `"agent_vel"`: the joint velocities of the robot arm in radians per second, shape (6,)
     - `"target_pos"`: the position of the target, as (x, y, z)
     - `"image_front"`: the front image of the camera of size (240, 320, 3)
     - `"image_top"`: the top image of the camera of size (240, 320, 3)
@@ -109,8 +109,8 @@ class PickCubeMatriceEnv(Env):
         # Set the observations space
         self.observation_mode = observation_mode
         observation_subspaces = {
-            "arm_qpos": spaces.Box(low=-np.pi, high=np.pi, shape=(6,)),
-            "arm_qvel": spaces.Box(low=-10.0, high=10.0, shape=(6,)),
+            "agent_pos": spaces.Box(low=-np.pi, high=np.pi, shape=(6,)),
+            "agent_vel": spaces.Box(low=-10.0, high=10.0, shape=(6,)),
         }
         if self.observation_mode in ["image", "both"]:
             observation_subspaces["image_front"] = spaces.Box(0, 255, shape=(240, 320, 3), dtype=np.uint8)
@@ -238,8 +238,8 @@ class PickCubeMatriceEnv(Env):
         # qpos is [x, y, z, qw, qx, qy, qz, q1, q2, q3, q4, q5, q6, gripper]
         # qvel is [vx, vy, vz, wx, wy, wz, dq1, dq2, dq3, dq4, dq5, dq6, dgripper]
         observation = {
-            "arm_qpos": self.data.qpos[self.arm_dof_id : self.arm_dof_id + self.nb_dof].astype(np.float32),
-            "arm_qvel": self.data.qvel[self.arm_dof_vel_id : self.arm_dof_vel_id + self.nb_dof].astype(np.float32),
+            "agent_pos": self.data.qpos[self.arm_dof_id : self.arm_dof_id + self.nb_dof].astype(np.float32),
+            "agent_vel": self.data.qvel[self.arm_dof_vel_id : self.arm_dof_vel_id + self.nb_dof].astype(np.float32),
         }
         if self.observation_mode in ["image", "both"]:
             self.renderer.update_scene(self.data, camera="camera_front")
@@ -254,7 +254,6 @@ class PickCubeMatriceEnv(Env):
         # We need the following line to seed self.np_random
         super().reset(seed=seed, options=options)
         cube_pos_index = np.random.randint(0, 24)
-        print(f"Cube position index : {cube_pos_index}")
         cube_pos = self.cube_positions[cube_pos_index]
         print(f"Starting position of the cube : {cube_pos}")
 
@@ -279,7 +278,6 @@ class PickCubeMatriceEnv(Env):
     def step(self, action):
         # Perform the action and step the simulation
         self.apply_action(action)
-        # print(f"Action applied : {action}")
 
         # Get the new observation
         observation = self.get_observation()

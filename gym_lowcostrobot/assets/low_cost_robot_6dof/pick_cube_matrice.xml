@@ -37,7 +37,7 @@
       <body name="cube" pos="0.0 0.2 0.008">
           <freejoint name="red_box_joint"/>
           <inertial pos="0 0 0" mass="0.8" diaginertia="0.00016667 0.00016667 0.00016667"/>
-          <geom friction="4.0" condim="4" pos="0 0 0" size="0.008 0.008 0.008" type="box" name="red_box" rgba="0.5 0 0 1" priority="1"/>
+          <geom friction="5.0" condim="4" pos="0 0 0" size="0.008 0.008 0.008" type="box" name="red_box" rgba="0.5 0 0 1" priority="1"/>
       </body>
       <!-- static cubes
             <geom name="static_cube_0" pos="-0.08 0.08 0.01" class="static_cube"/>
