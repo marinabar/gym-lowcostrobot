@@ -94,7 +94,7 @@ class PickCubeMatriceEnv(Env):
 
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 200}
 
-    def __init__(self, observation_mode="image", action_mode="joint", render_mode=None):
+    def __init__(self, observation_mode="image", action_mode="joint", render_mode=None, max_episode_steps=6000):
         # Load the MuJoCo model and data
         self.model = mujoco.MjModel.from_xml_path(os.path.join(ASSETS_PATH, "pick_cube_matrice.xml"), {})
         self.data = mujoco.MjData(self.model)
@@ -113,9 +113,8 @@ class PickCubeMatriceEnv(Env):
             "agent_vel": spaces.Box(low=-10.0, high=10.0, shape=(6,)),
         }
         if self.observation_mode in ["image", "both"]:
-            observation_subspaces["pixels"] = spaces.Dict()
-            observation_subspaces["pixels"]["image_front"] = spaces.Box(0, 255, shape=(240, 320, 3), dtype=np.uint8)
-            observation_subspaces["pixels"]["image_top"] = spaces.Box(0, 255, shape=(240, 320, 3), dtype=np.uint8)
+            observation_subspaces["image_front"] = spaces.Box(0, 255, shape=(240, 320, 3), dtype=np.uint8)
+            observation_subspaces["image_top"] = spaces.Box(0, 255, shape=(240, 320, 3), dtype=np.uint8)
             self.renderer = mujoco.Renderer(self.model)
         if self.observation_mode in ["state", "both"]:
             observation_subspaces["cube_pos"] = spaces.Box(low=-10.0, high=10.0, shape=(3,))
@@ -132,7 +131,7 @@ class PickCubeMatriceEnv(Env):
             self.rgb_array_renderer = mujoco.Renderer(self.model, height=640, width=640)
 
         # Set additional utils
-        self.threshold_height = 0.5
+        self.success_threshold = [0.022, 0.022]
 
         # self.robot_rest_pos = np.array([-0.00306796,  0.71811652,  1.41732051,  -0.15493206,   0.09203885, -0.75471855])
         # self.robot_rest_pos = np.array([0.0, 0.0, 0.0, -1.5, 0.0, 0.0])
@@ -150,6 +149,10 @@ class PickCubeMatriceEnv(Env):
         self.control_decimation = 4  # number of simulation steps per control step
 
         self.cube_positions = create_cube_positions()
+
+
+        self.max_episode_steps = max_episode_steps
+        self._step = 0
 
     def inverse_kinematics(self, ee_target_pos, step=0.2, joint_name="link_6", nb_dof=6, regularization=1e-6):
         """
@@ -227,6 +230,7 @@ class PickCubeMatriceEnv(Env):
             raise ValueError("Invalid action mode, must be 'ee' or 'joint'")
 
         # Set the target position
+        #print(f'Difference between target and current position : {target_qpos - self.data.qpos[self.arm_dof_id : self.arm_dof_id + self.nb_dof]}')
         self.data.ctrl = target_qpos
 
         # Step the simulation forward
@@ -243,11 +247,10 @@ class PickCubeMatriceEnv(Env):
             "agent_vel": self.data.qvel[self.arm_dof_vel_id : self.arm_dof_vel_id + self.nb_dof].astype(np.float32),
         }
         if self.observation_mode in ["image", "both"]:
-            observation["pixels"] = {}
             self.renderer.update_scene(self.data, camera="camera_front")
-            observation["pixels"]["image_front"] = self.renderer.render()
+            observation["image_front"] = self.renderer.render()
             self.renderer.update_scene(self.data, camera="camera_top")
-            observation["pixels"]["image_top"] = self.renderer.render()
+            observation["image_top"] = self.renderer.render()
         if self.observation_mode in ["state", "both"]:
             observation["cube_pos"] = self.data.qpos[self.cube_dof_id : self.cube_dof_id + 3].astype(np.float32)
         return observation
@@ -284,13 +287,24 @@ class PickCubeMatriceEnv(Env):
         # Get the new observation
         observation = self.get_observation()
 
+        self._step += 1
+
         # Get the position of the cube and the distance between the end effector and the cube
         cube_pos = self.data.qpos[self.cube_dof_id : self.cube_dof_id + 3]
-        cube_to_target = np.linalg.norm(cube_pos - self.target_pos)
+        cube_to_target = np.abs(cube_pos[:2] - self.target_pos[:2])
+
 
         # Compute the reward
-        reward = -cube_to_target
-        return observation, reward, False, False, {}
+        reward = -np.linalg.norm(cube_to_target)
+        success = np.all(cube_to_target < self.success_threshold)
+        #print(f"Cube to target distance : {cube_to_target}")
+        
+
+        truncated = self._step >= self.max_episode_steps
+        terminated = success or truncated
+
+        info = {'timestamp': self.data.time, 'is_success': success}
+        return observation, reward, terminated, truncated, info
 
     def render(self):
         if self.render_mode == "human":
